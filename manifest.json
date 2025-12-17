@@ -1,9 +1,9 @@
 {
   "name": "Registro Spese",
   "short_name": "Spese",
-  "start_url": ".",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#198754",
+  "background_color": "#f1f3f6",
   "theme_color": "#198754",
   "icons": [
     {
