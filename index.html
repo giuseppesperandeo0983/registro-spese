@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#198754">
 <meta charset="UTF-8">
 <title>Registro Spese</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -16,7 +18,11 @@ label { font-weight: 600; margin-bottom: 0.3rem; }
 .list-group-item:active { opacity: 0.8; }
 </style>
 </head>
-
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
 <body>
 <div class="container-fluid px-3 pb-5">
   <div class="card app-card shadow-sm">
@@ -307,3 +313,4 @@ function caricaSpese() {
 </script>
 </body>
 </html>
+
