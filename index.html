@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
-
 <style>
 body { background: #f1f3f6; font-size: 1.1rem; }
 .app-card { border-radius: 18px; margin-top: 1rem; }
@@ -17,30 +16,21 @@ label { font-weight: 600; margin-bottom: 0.3rem; }
 .list-group-item:active { opacity: 0.8; }
 </style>
 </head>
-
 <body>
 <div class="container-fluid px-3 pb-5">
   <div class="card app-card shadow-sm">
     <div class="card-body">
       <h4 class="text-center mb-3">💰 Nuova Spesa</h4>
-
       <form id="spesaForm">
-        <div class="mb-3">
-          <label>📅 Data</label>
-          <input type="date" id="data" class="form-control" required>
-        </div>
-
-        <div class="mb-3">
-          <label>⬆️ Entrata</label>
+        <div class="mb-3"><label>📅 Data</label><input type="date" id="data" class="form-control" required></div>
+        <div class="mb-3"><label>⬆️ Entrata</label>
           <select id="entrata" class="form-select">
             <option value="">Nessuna</option>
             <option>Stipendio</option>
             <option>Altre Entrate</option>
           </select>
         </div>
-
-        <div class="mb-3">
-          <label>⬇️ Uscita</label>
+        <div class="mb-3"><label>⬇️ Uscita</label>
           <select id="uscita" class="form-select">
             <option value="">Nessuna</option>
             <option>Abbigliamento</option>
@@ -71,20 +61,10 @@ label { font-weight: 600; margin-bottom: 0.3rem; }
             <option>Vacanza</option>
           </select>
         </div>
-
-        <div class="mb-3">
-          <label>💶 Importo</label>
-          <input type="number" step="0.01" id="importo" class="form-control" required>
-        </div>
-
-        <div class="mb-3">
-          <label>📝 Note</label>
-          <textarea id="note" rows="2" class="form-control"></textarea>
-        </div>
+        <div class="mb-3"><label>💶 Importo</label><input type="number" step="0.01" id="importo" class="form-control" required></div>
+        <div class="mb-3"><label>📝 Note</label><textarea id="note" rows="2" class="form-control"></textarea></div>
       </form>
-
       <div id="messaggio" class="alert alert-success text-center d-none mt-3"></div>
-
       <hr class="my-4">
       <h5 class="text-center mb-3">📋 Ultime Spese</h5>
       <div id="listaSpese" class="list-group"></div>
@@ -97,96 +77,69 @@ label { font-weight: 600; margin-bottom: 0.3rem; }
     </div>
   </div>
 </div>
-
-<button class="btn btn-success btn-save" onclick="invia()">💾 Salva</button>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<button class="btn btn-success btn-save" id="btnSalva">💾 Salva</button>
 
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxI5gMH6QU__LnT15brQ3vKgGXfHG01e2LsTg1exeUL5jmWDumGombhLRNdwDNN43UZ/exec";
-document.getElementById("data").valueAsDate = new Date();
-let invioInCorso = false;
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxI5gMH6QU__LnT15brQ3vKgGXfHG01e2LsTg1exeUL5jmWDumGombhLRNdwDNN43UZ/exec";
 
-function mostraErrore(testo){
-  const box = document.getElementById("messaggio");
-  box.textContent = testo;
-  box.className = "alert alert-danger text-center mt-3 d-block";
+document.getElementById("data").valueAsDate = new Date();
+
+async function caricaSpese(){
+  const spese = await fetch(`${SCRIPT_URL}?action=getUltimeSpese`).then(r=>r.json());
+  mostraSpese(spese);
+  const riepilogo = await fetch(`${SCRIPT_URL}?action=getRiepilogoMensile`).then(r=>r.json());
+  document.getElementById("totEntrate").textContent = "€ "+riepilogo.entrate.toFixed(2);
+  document.getElementById("totUscite").textContent = "€ "+riepilogo.uscite.toFixed(2);
+  const saldoEl = document.getElementById("saldoMensile");
+  saldoEl.textContent = "€ "+riepilogo.saldo.toFixed(2);
+  saldoEl.style.color = riepilogo.saldo>=0?"green":"red";
 }
 
-// SALVATAGGIO SPESA
-function invia(){
-  if(invioInCorso) return;
+function mostraSpese(spese){
+  const lista = document.getElementById("listaSpese");
+  lista.innerHTML="";
+  if(spese.length===0){ lista.innerHTML="<div class='text-center text-muted'>Nessuna spesa</div>"; return; }
+  spese.forEach(s=>{
+    const colore = s.entrata?"success":"danger";
+    const titolo = s.entrata || s.uscita;
+    const item = document.createElement("a");
+    item.href="#";
+    item.className=`list-group-item list-group-item-${colore} d-flex justify-content-between align-items-center text-start`;
+    item.style.cursor="pointer";
+    item.innerHTML=`<div><strong>${titolo}</strong><br><small>${s.data} ${s.note?"• "+s.note:""}</small></div><span class="fw-bold">€ ${Number(s.importo).toFixed(2)}</span>`;
+    lista.appendChild(item);
+  });
+}
+
+document.getElementById("btnSalva").addEventListener("click", async ()=>{
   const data = document.getElementById("data").value;
   const entrata = document.getElementById("entrata").value;
   const uscita = document.getElementById("uscita").value;
-  const importo = parseFloat(document.getElementById("importo").value);
+  const importo = document.getElementById("importo").value;
   const note = document.getElementById("note").value;
-  if(!data) return mostraErrore("Seleziona una data");
-  if(!entrata && !uscita) return mostraErrore("Seleziona Entrata o Uscita");
-  if(entrata && uscita) return mostraErrore("Seleziona solo una voce");
-  if(!importo || importo <= 0) return mostraErrore("Importo non valido");
+  const msgBox = document.getElementById("messaggio");
 
-  invioInCorso = true;
+  msgBox.classList.add("d-none");
+  if(!data){ msgBox.textContent="Seleziona una data"; msgBox.className="alert alert-danger text-center mt-3 d-block"; return; }
+  if(!entrata && !uscita){ msgBox.textContent="Seleziona Entrata o Uscita"; msgBox.className="alert alert-danger text-center mt-3 d-block"; return; }
+  if(entrata && uscita){ msgBox.textContent="Seleziona solo una voce"; msgBox.className="alert alert-danger text-center mt-3 d-block"; return; }
+  if(!importo || importo<=0){ msgBox.textContent="Importo non valido"; msgBox.className="alert alert-danger text-center mt-3 d-block"; return; }
 
-  fetch(`${WEB_APP_URL}?action=salvaSpesa&data=${encodeURIComponent(data)}&entrata=${encodeURIComponent(entrata)}&uscita=${encodeURIComponent(uscita)}&importo=${importo}&note=${encodeURIComponent(note)}`)
-    .then(r=>r.text())
-    .then(msg=>{
-      const box = document.getElementById("messaggio");
-      box.textContent = msg;
-      box.className = "alert alert-success text-center mt-3 d-block";
-      document.getElementById("spesaForm").reset();
-      document.getElementById("data").valueAsDate = new Date();
-      caricaSpese();
-      invioInCorso = false;
-    })
-    .catch(err=>{
-      mostraErrore("Errore: "+err.message);
-      invioInCorso = false;
-    });
-}
+  try{
+    const res = await fetch(`${SCRIPT_URL}?action=salvaSpesa&data=${data}&entrata=${entrata}&uscita=${uscita}&importo=${importo}&note=${note}`);
+    const result = await res.json();
+    if(result.error){ throw new Error(result.error); }
+    msgBox.textContent=result; msgBox.className="alert alert-success text-center mt-3 d-block";
+    document.getElementById("spesaForm").reset();
+    document.getElementById("data").valueAsDate=new Date();
+    caricaSpese();
+  }catch(err){
+    msgBox.textContent="Errore: "+err.message;
+    msgBox.className="alert alert-danger text-center mt-3 d-block";
+  }
+});
 
-// CARICA ULTIME SPESE
-function caricaSpese(){
-  fetch(`${WEB_APP_URL}?action=getUltimeSpese`)
-    .then(r=>r.json())
-    .then(spese=>{
-      const lista = document.getElementById("listaSpese");
-      lista.innerHTML = "";
-      if(spese.length===0){
-        lista.innerHTML = "<div class='text-center text-muted'>Nessuna spesa</div>";
-        return;
-      }
-      spese.forEach(s=>{
-        const colore = s.entrata?"success":"danger";
-        const titolo = s.entrata || s.uscita;
-        const item = document.createElement("a");
-        item.href="#";
-        item.className=`list-group-item list-group-item-${colore} d-flex justify-content-between align-items-center text-start`;
-        item.style.cursor="pointer";
-        item.innerHTML=`
-          <div><strong>${titolo}</strong><br><small>${s.data} ${s.note?"• "+s.note:""}</small></div>
-          <span class="fw-bold">€ ${Number(s.importo).toFixed(2)}</span>
-        `;
-        lista.appendChild(item);
-      });
-      caricaRiepilogo();
-    });
-}
-
-// CARICA RIEPILOGO
-function caricaRiepilogo(){
-  fetch(`${WEB_APP_URL}?action=getRiepilogoMensile`)
-    .then(r=>r.json())
-    .then(riepilogo=>{
-      document.getElementById("totEntrate").textContent = "€ " + riepilogo.entrate.toFixed(2);
-      document.getElementById("totUscite").textContent = "€ " + riepilogo.uscite.toFixed(2);
-      const saldoEl = document.getElementById("saldoMensile");
-      saldoEl.textContent = "€ " + riepilogo.saldo.toFixed(2);
-      saldoEl.style.color = riepilogo.saldo >= 0 ? "green" : "red";
-    });
-}
-
-window.onload = caricaSpese;
+window.onload=caricaSpese;
 </script>
 </body>
 </html>
